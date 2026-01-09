@@ -4,8 +4,9 @@ use anyhow::Result;
 use clap::Parser;
 use jiff::civil::Date;
 use octocrab::Octocrab;
-use serde::Serialize;
 use tokio::time::sleep;
+
+use pr_history::PullRequests;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -76,11 +77,7 @@ async fn search(query: &str, urls: &mut HashSet<String>, client: &Octocrab) -> a
     Ok(())
 }
 
-#[derive(Debug, Serialize)]
-struct PullRequests {
-    authored: Vec<String>,
-    reviewed: Vec<String>,
-}
+
 
 #[derive(Parser, Debug)]
 struct Args {
