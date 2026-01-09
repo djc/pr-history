@@ -1,5 +1,6 @@
 use std::{
     collections::{HashMap, HashSet},
+    fmt::Write,
     fs::File,
     hash::RandomState,
     io::BufReader,
@@ -7,6 +8,7 @@ use std::{
 };
 
 use clap::Parser;
+use jiff::civil::Date;
 
 use pr_history::PullRequests;
 
@@ -30,13 +32,45 @@ fn main() -> anyhow::Result<()> {
         repos.entry(project(url).unwrap()).or_default().1 += 1;
     }
 
+    if args.rest {
+        println!(".. list-table:: Pull requests");
+        println!("   :header-rows: 1");
+        println!("   :widths: auto");
+        println!("");
+        println!("   * - Repostory");
+        println!("     - Auth");
+        println!("     - Rev");
+    }
+
+    let start = Date::new(args.year, 1, 1).unwrap();
+    let end = Date::new(args.year, 12, 31).unwrap();
     let mut repos = repos.into_iter().collect::<Vec<_>>();
     repos.sort_by_key(|(_, (authored, review))| (usize::MAX - (authored * 2), usize::MAX - review));
     for (repo, (authored, review)) in repos {
-        println!("{repo:>50}: {authored:>5} | {review:>5}");
+        if !args.rest {
+            println!("{repo:>50}: {authored:>5} | {review:>5}");
+            continue;
+        }
+
+        println!("   * - `{repo} <https://github.com/{repo}>`__");
+        let authored_url = search_link(&repo, "author", &args.user, start, end);
+        println!("     - `{authored} <{authored_url}>`__");
+        let reviewed_url = search_link(&repo, "reviewed-by", &args.user, start, end);
+        println!("     - `{review} <{reviewed_url}>`__");
     }
 
     Ok(())
+}
+
+fn search_link(repo: &str, r#type: &str, user: &str, start: Date, end: Date) -> String {
+    let mut url = "https://github.com/search?q=is%3Apr".to_owned();
+    url.write_fmt(format_args!("+{type}%3A{user}")).unwrap();
+    let (org, repo) = repo.split_once('/').unwrap();
+    url.write_fmt(format_args!("+repo%3A{org}%2F{repo}"))
+        .unwrap();
+    url.write_fmt(format_args!("+created%3A{start}..{end}"))
+        .unwrap();
+    url
 }
 
 fn project(url: &str) -> Option<String> {
@@ -50,4 +84,10 @@ fn project(url: &str) -> Option<String> {
 #[derive(Parser, Debug)]
 struct Args {
     input: PathBuf,
+    #[clap(short, long)]
+    user: String,
+    #[clap(long)]
+    rest: bool,
+    #[clap(long)]
+    year: i16,
 }
