@@ -46,7 +46,11 @@ fn main() -> anyhow::Result<()> {
     let end = Date::new(args.year, 12, 31).unwrap();
     let mut repos = repos.into_iter().collect::<Vec<_>>();
     repos.sort_by_key(|(_, (authored, review))| (usize::MAX - (authored * 2), usize::MAX - review));
+    let mut totals = (repos.len(), 0, 0);
     for (repo, (authored, review)) in repos {
+        totals.1 += authored;
+        totals.2 += review;
+
         if !args.rest {
             println!("{repo:>50}: {authored:>5} | {review:>5}");
             continue;
@@ -58,6 +62,10 @@ fn main() -> anyhow::Result<()> {
         let reviewed_url = search_link(&repo, "reviewed-by", &args.user, start, end);
         println!("     - `{review} <{reviewed_url}>`__");
     }
+
+    println!("PROJECTS: {}", totals.0);
+    println!("TOTAL AUTHORED: {}", totals.1);
+    println!("TOTAL REVIEWED: {}", totals.2);
 
     Ok(())
 }
