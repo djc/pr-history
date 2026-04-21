@@ -42,8 +42,6 @@ fn main() -> anyhow::Result<()> {
         println!("     - Rev");
     }
 
-    let start = Date::new(args.year, 1, 1).unwrap();
-    let end = Date::new(args.year, 12, 31).unwrap();
     let mut repos = repos.into_iter().collect::<Vec<_>>();
     repos.sort_by_key(|(_, (authored, review))| (usize::MAX - (authored * 2), usize::MAX - review));
     let mut totals = (repos.len(), 0, 0);
@@ -57,9 +55,9 @@ fn main() -> anyhow::Result<()> {
         }
 
         println!("   * - `{repo} <https://github.com/{repo}>`__");
-        let authored_url = search_link(&repo, "author", &args.user, start, end);
+        let authored_url = search_link(&repo, "author", &args.user, args.start, args.end);
         println!("     - `{authored} <{authored_url}>`__");
-        let reviewed_url = search_link(&repo, "reviewed-by", &args.user, start, end);
+        let reviewed_url = search_link(&repo, "reviewed-by", &args.user, args.start, args.end);
         println!("     - `{review} <{reviewed_url}>`__");
     }
 
@@ -96,6 +94,8 @@ struct Args {
     user: String,
     #[clap(long)]
     rest: bool,
-    #[clap(long)]
-    year: i16,
+    #[arg(long)]
+    start: Date,
+    #[arg(long)]
+    end: Date,
 }

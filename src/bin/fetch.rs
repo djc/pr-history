@@ -2,7 +2,7 @@ use std::{collections::HashSet, fs::File, io::BufWriter, time::Duration};
 
 use anyhow::Result;
 use clap::Parser;
-use jiff::civil::Date;
+use jiff::{Span, civil::Date};
 use octocrab::Octocrab;
 use tokio::time::sleep;
 
@@ -20,18 +20,20 @@ async fn main() -> Result<()> {
         Octocrab::builder().build()?
     };
 
-    let start = Date::new(args.year, 1, 1).unwrap();
-    let end = Date::new(args.year, 12, 31).unwrap();
-    let query = format!("type:pr author:{} created:{start}..{end}", args.user);
+    let query = format!(
+        "type:pr author:{} created:{}..{}",
+        args.user, args.start, args.end
+    );
     let mut authored = HashSet::default();
     search(&query, &mut authored, &octocrab).await?;
 
     let mut reviewed = HashSet::default();
-    for i in 1..=12 {
-        let start = Date::new(args.year, i, 1).unwrap();
-        let end = start.last_of_month();
-        let query = format!("type:pr reviewed-by:{} created:{start}..{end}", args.user);
+    let mut cur = args.start;
+    while cur < args.end {
+        let end = cur.last_of_month();
+        let query = format!("type:pr reviewed-by:{} created:{cur}..{end}", args.user);
         search(&query, &mut reviewed, &octocrab).await?;
+        cur = end + Span::new().days(1);
     }
 
     let file = File::create("data.json")?;
@@ -77,8 +79,6 @@ async fn search(query: &str, urls: &mut HashSet<String>, client: &Octocrab) -> a
     Ok(())
 }
 
-
-
 #[derive(Parser, Debug)]
 struct Args {
     /// GitHub username to analyze
@@ -86,7 +86,10 @@ struct Args {
     user: String,
 
     #[arg(long)]
-    year: i16,
+    start: Date,
+
+    #[arg(long)]
+    end: Date,
 
     /// GitHub personal access token
     #[arg(short, long)]
