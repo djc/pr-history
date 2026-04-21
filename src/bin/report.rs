@@ -17,8 +17,8 @@ fn main() -> anyhow::Result<()> {
     let file = File::open(args.input)?;
     let data = serde_json::from_reader::<_, PullRequests>(BufReader::new(file))?;
 
-    let authored = HashSet::<_, RandomState>::from_iter(data.authored.into_iter());
-    let mut reviewed = HashSet::<_, RandomState>::from_iter(data.reviewed.into_iter());
+    let authored = HashSet::<_, RandomState>::from_iter(data.authored);
+    let mut reviewed = HashSet::<_, RandomState>::from_iter(data.reviewed);
     for url in &authored {
         reviewed.remove(url);
     }
@@ -36,7 +36,7 @@ fn main() -> anyhow::Result<()> {
         println!(".. list-table:: Pull requests");
         println!("   :header-rows: 1");
         println!("   :widths: auto");
-        println!("");
+        println!();
         println!("   * - Repostory");
         println!("     - Auth");
         println!("     - Rev");
