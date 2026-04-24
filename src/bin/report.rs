@@ -49,16 +49,19 @@ fn main() -> anyhow::Result<()> {
         totals.1 += authored;
         totals.2 += review;
 
-        if !args.rest {
-            println!("{repo:>50}: {authored:>5} | {review:>5}");
-            continue;
-        }
-
-        println!("   * - `{repo} <https://github.com/{repo}>`__");
         let authored_url = search_link(&repo, "author", &args.user, args.start, args.end);
-        println!("     - `{authored} <{authored_url}>`__");
         let reviewed_url = search_link(&repo, "reviewed-by", &args.user, args.start, args.end);
-        println!("     - `{review} <{reviewed_url}>`__");
+
+        if args.rest {
+            println!("   * - `{repo} <https://github.com/{repo}>`__");
+            println!("     - `{authored} <{authored_url}>`__");
+            println!("     - `{review} <{reviewed_url}>`__");
+        } else {
+            println!("{repo}:");
+            println!("  {authored:02} ({authored_url})");
+            println!("  {review:02} ({reviewed_url})");
+            println!();
+        }
     }
 
     println!("PROJECTS: {}", totals.0);
