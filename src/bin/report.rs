@@ -5,6 +5,7 @@ use std::{
     hash::RandomState,
     io::BufReader,
     path::PathBuf,
+    str::FromStr,
 };
 
 use clap::Parser;
@@ -32,7 +33,7 @@ fn main() -> anyhow::Result<()> {
         repos.entry(project(url).unwrap()).or_default().1 += 1;
     }
 
-    if args.rest {
+    if args.mode == Mode::Rest {
         println!(".. list-table:: Pull requests");
         println!("   :header-rows: 1");
         println!("   :widths: auto");
@@ -52,7 +53,7 @@ fn main() -> anyhow::Result<()> {
         let authored_url = search_link(&repo, "author", &args.user, args.start, args.end);
         let reviewed_url = search_link(&repo, "reviewed-by", &args.user, args.start, args.end);
 
-        if args.rest {
+        if args.mode == Mode::Rest {
             println!("   * - `{repo} <https://github.com/{repo}>`__");
             println!("     - `{authored} <{authored_url}>`__");
             println!("     - `{review} <{reviewed_url}>`__");
@@ -95,10 +96,29 @@ struct Args {
     input: PathBuf,
     #[clap(short, long)]
     user: String,
-    #[clap(long)]
-    rest: bool,
+    #[clap(long, default_value = "plain")]
+    mode: Mode,
     #[arg(long)]
     start: Date,
     #[arg(long)]
     end: Date,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+enum Mode {
+    Rest,
+    #[default]
+    Plain,
+}
+
+impl FromStr for Mode {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "rest" => Ok(Self::Rest),
+            "plain" => Ok(Self::Plain),
+            _ => Err(format!("invalid mode: {s}")),
+        }
+    }
 }
