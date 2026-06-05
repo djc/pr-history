@@ -53,15 +53,24 @@ fn main() -> anyhow::Result<()> {
         let authored_url = search_link(&repo, "author", &args.user, args.start, args.end);
         let reviewed_url = search_link(&repo, "reviewed-by", &args.user, args.start, args.end);
 
-        if args.mode == Mode::Rest {
-            println!("   * - `{repo} <https://github.com/{repo}>`__");
-            println!("     - `{authored} <{authored_url}>`__");
-            println!("     - `{review} <{reviewed_url}>`__");
-        } else {
-            println!("{repo}:");
-            println!("  {authored:02} ({authored_url})");
-            println!("  {review:02} ({reviewed_url})");
-            println!();
+        match args.mode {
+            Mode::Markdown => {
+                println!("* [{repo}](https://github.com/{repo}):");
+                println!("  * [Authored]({authored_url}): {authored}");
+                println!("  * [Reviewed]({reviewed_url}): {review}");
+                println!();
+            }
+            Mode::Rest => {
+                println!("   * - `{repo} <https://github.com/{repo}>`__");
+                println!("     - `{authored} <{authored_url}>`__");
+                println!("     - `{review} <{reviewed_url}>`__");
+            }
+            Mode::Plain => {
+                println!("{repo}:");
+                println!("  {authored:02} ({authored_url})");
+                println!("  {review:02} ({reviewed_url})");
+                println!();
+            }
         }
     }
 
@@ -106,6 +115,7 @@ struct Args {
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 enum Mode {
+    Markdown,
     Rest,
     #[default]
     Plain,
@@ -116,6 +126,7 @@ impl FromStr for Mode {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
+            "md" | "markdown" => Ok(Self::Markdown),
             "rest" => Ok(Self::Rest),
             "plain" => Ok(Self::Plain),
             _ => Err(format!("invalid mode: {s}")),
