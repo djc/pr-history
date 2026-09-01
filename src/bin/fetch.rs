@@ -40,6 +40,9 @@ async fn main() -> Result<()> {
     serde_json::to_writer_pretty(
         BufWriter::new(file),
         &PullRequests {
+            user: args.user,
+            start: args.start,
+            end: args.end,
             authored: authored.into_iter().collect(),
             reviewed: reviewed.into_iter().collect(),
         },
