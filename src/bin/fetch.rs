@@ -31,7 +31,10 @@ async fn main() -> Result<()> {
     let mut cur = args.start;
     while cur < args.end {
         let end = cur.last_of_month();
-        let query = format!("type:pr reviewed-by:{} created:{cur}..{end}", args.user);
+        let query = format!(
+            "type:pr reviewed-by:{} created:{cur}..{end} -author:app/dependabot",
+            args.user
+        );
         search(&query, &mut reviewed, &octocrab).await?;
         cur = end + Span::new().days(1);
     }

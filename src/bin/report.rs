@@ -95,6 +95,9 @@ fn search_link(repo: &str, r#type: &str, data: &Metadata) -> String {
         .unwrap();
     url.write_fmt(format_args!("+created%3A{}..{}", data.start, data.end))
         .unwrap();
+    if r#type == "reviewed-by" {
+        url.push_str("+-author%3Aapp%2Fdependabot");
+    }
     url
 }
 
