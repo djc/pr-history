@@ -105,7 +105,7 @@ struct Args {
     input: PathBuf,
     #[clap(short, long)]
     user: String,
-    #[clap(long, default_value = "plain")]
+    #[clap(long, default_value = "markdown")]
     mode: Mode,
     #[arg(long)]
     start: Date,
