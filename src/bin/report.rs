@@ -17,6 +17,11 @@ fn main() -> anyhow::Result<()> {
     let args = Args::parse();
     let file = File::open(args.input)?;
     let data = serde_json::from_reader::<_, PullRequests>(BufReader::new(file))?;
+    let meta = Metadata {
+        user: data.user,
+        start: data.start,
+        end: data.end,
+    };
 
     let authored = HashSet::<_, RandomState>::from_iter(data.authored);
     let mut reviewed = HashSet::<_, RandomState>::from_iter(data.reviewed);
@@ -50,8 +55,8 @@ fn main() -> anyhow::Result<()> {
         totals.1 += authored;
         totals.2 += review;
 
-        let authored_url = search_link(&repo, "author", &args.user, args.start, args.end);
-        let reviewed_url = search_link(&repo, "reviewed-by", &args.user, args.start, args.end);
+        let authored_url = search_link(&repo, "author", &meta);
+        let reviewed_url = search_link(&repo, "reviewed-by", &meta);
 
         match args.mode {
             Mode::Markdown => {
@@ -81,13 +86,14 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn search_link(repo: &str, r#type: &str, user: &str, start: Date, end: Date) -> String {
+fn search_link(repo: &str, r#type: &str, data: &Metadata) -> String {
     let mut url = "https://github.com/search?q=is%3Apr".to_owned();
-    url.write_fmt(format_args!("+{type}%3A{user}")).unwrap();
+    url.write_fmt(format_args!("+{type}%3A{}", data.user))
+        .unwrap();
     let (org, repo) = repo.split_once('/').unwrap();
     url.write_fmt(format_args!("+repo%3A{org}%2F{repo}"))
         .unwrap();
-    url.write_fmt(format_args!("+created%3A{start}..{end}"))
+    url.write_fmt(format_args!("+created%3A{}..{}", data.start, data.end))
         .unwrap();
     url
 }
@@ -102,15 +108,10 @@ fn project(url: &str) -> Option<String> {
 
 #[derive(Parser, Debug)]
 struct Args {
+    #[clap(default_value = "data.json")]
     input: PathBuf,
-    #[clap(short, long)]
-    user: String,
     #[clap(long, default_value = "markdown")]
     mode: Mode,
-    #[arg(long)]
-    start: Date,
-    #[arg(long)]
-    end: Date,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -132,4 +133,10 @@ impl FromStr for Mode {
             _ => Err(format!("invalid mode: {s}")),
         }
     }
+}
+
+pub struct Metadata {
+    pub user: String,
+    pub start: Date,
+    pub end: Date,
 }
